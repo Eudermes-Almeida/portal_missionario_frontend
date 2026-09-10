@@ -1,0 +1,36 @@
+:root {
+  --sky: #5b8dff;
+  --royal: #2f5fd6;
+  --deep: #132a6b;
+  --deepest: #0d1d4d;
+  --paper: #eef2fb;
+  --card: #ffffff;
+  --ink: #16224d;
+  --ink-dim: #5c6690;
+  --line: rgba(22, 34, 77, 0.1);
+  --gold: #f5a524;
+  --good: #1fa15a;
+  --shadow: 0 16px 40px rgba(20, 40, 110, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,139 @@
+<!-- Avatar reutilizado no card do carrossel e no detalhe -->
+<ng-template #avatarSilhueta let-sexo="sexo">
+  <svg *ngIf="sexo === 'F'" viewBox="0 0 100 130" preserveAspectRatio="xMidYMax meet">
+    <path d="M50 8c-16 0-27 13-27 30 0 10 3 17 7 22-14 8-22 20-24 40-1 8 2 12 8 12h72c6 0 9-4 8-12-2-20-10-32-24-40 4-5 7-12 7-22 0-17-11-30-27-30z" />
+  </svg>
+  <svg *ngIf="sexo !== 'F'" viewBox="0 0 100 130" preserveAspectRatio="xMidYMax meet">
+    <path d="M50 10c-15 0-25 12-25 28 0 9 2 16 6 21-13 7-21 19-23 39-1 8 2 13 8 13h68c6 0 9-5 8-13-2-20-10-32-23-39 4-5 6-12 6-21 0-16-10-28-25-28z" />
+  </svg>
+</ng-template>
+
+<div class="hero">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2 L14.5 9.5 L22 12 L14.5 14.5 L12 22 L9.5 14.5 L2 12 L9.5 9.5 Z" fill="#ffffff"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>Portal Missionário</h1>
+        <p>Estaca Betim &middot; carrossel de missionários</p>
+      </div>
+    </div>
+    <div class="status-pill">
+      <span class="dot"></span>
+      <span *ngIf="!carregando && !erroCarregamento">{{ lista.length }} de {{ todos.length }} carregados</span>
+      <span *ngIf="carregando">carregando...</span>
+      <span *ngIf="erroCarregamento">erro ao carregar</span>
+    </div>
+  </header>
+</div>
+
+<div class="page">
+
+  <p class="erro-msg" *ngIf="erroCarregamento">{{ erroCarregamento }}</p>
+
+  <div class="stage" *ngIf="!detalheAberto && !erroCarregamento">
+    <div class="carousel-row">
+      <button class="nav-btn" (click)="anterior()" [disabled]="!lista.length" aria-label="Anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+
+      <div class="card" *ngIf="atual as m">
+        <button class="select-btn" (click)="selecionar(m)">Selecione</button>
+        <div class="avatar-frame">
+          <img *ngIf="m.linkfoto && !fotoQuebrada" [src]="m.linkfoto" [alt]="m.nomemissao" (error)="onFotoErro()">
+          <ng-container *ngIf="!m.linkfoto || fotoQuebrada">
+            <ng-container *ngTemplateOutlet="avatarSilhueta; context:{ sexo: m.sexo }"></ng-container>
+          </ng-container>
+        </div>
+        <p class="card-name">{{ m.nomemissao }}</p>
+        <p class="card-sub">{{ m.unidade }}</p>
+        <span class="badge" [class.no-campo]="m.status === 'No Campo'" [class.outro]="m.status !== 'No Campo'">{{ m.status }}</span>
+      </div>
+
+      <div class="empty-card" *ngIf="!atual && !carregando">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <strong>Nenhum missionário encontrado</strong>
+        <span>Ajuste os filtros de unidade ou status para ver resultados.</span>
+      </div>
+
+      <button class="nav-btn" (click)="proximo()" [disabled]="!lista.length" aria-label="Próximo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="filters">
+      <div class="filter-toggles">
+        <button class="toggle-chip" [class.active]="!!filtroUnidade" (click)="toggleUnidade()" type="button">
+          <span class="radio"></span> Buscar por unidade
+          <span class="count" *ngIf="filtroUnidade">&middot; {{ filtroUnidade }}</span>
+        </button>
+        <button class="toggle-chip" [class.active]="!!filtroStatus" (click)="toggleStatus()" type="button">
+          <span class="radio"></span> Buscar por status
+          <span class="count" *ngIf="filtroStatus">&middot; {{ filtroStatus }}</span>
+        </button>
+        <button class="clear-link" *ngIf="temFiltroAtivo" (click)="limparFiltros()" type="button">limpar filtros</button>
+      </div>
+
+      <div class="filter-panel" *ngIf="painelUnidadeAberto">
+        <button class="pill" *ngFor="let u of unidades" [class.on]="u === filtroUnidade" (click)="pickUnidade(u)">{{ u }}</button>
+      </div>
+      <div class="filter-panel" *ngIf="painelStatusAberto">
+        <button class="pill" *ngFor="let s of statuses" [class.on]="s === filtroStatus" (click)="pickStatus(s)">{{ s }}</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail" *ngIf="detalheAberto && selecionado as m">
+    <button class="back-link" (click)="voltarAoCarrossel()" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Voltar ao carrossel
+    </button>
+
+    <div class="detail-card">
+      <div class="detail-avatar">
+        <img *ngIf="m.linkfoto && !fotoQuebrada" [src]="m.linkfoto" [alt]="m.nomemissao" (error)="onFotoErro()">
+        <ng-container *ngIf="!m.linkfoto || fotoQuebrada">
+          <ng-container *ngTemplateOutlet="avatarSilhueta; context:{ sexo: m.sexo }"></ng-container>
+        </ng-container>
+      </div>
+      <p class="detail-name">{{ m.nomemissao }}</p>
+      <p class="detail-sub">{{ m.unidade }}</p>
+
+      <dl class="fact-list">
+        <div class="fact-row"><dt>Nome completo</dt><dd>{{ m.nomecompleto }}</dd></div>
+        <div class="fact-row"><dt>Idade</dt><dd>{{ m.idade }} anos</dd></div>
+        <div class="fact-row"><dt>Status da missão</dt><dd>{{ m.status }}</dd></div>
+        <div class="fact-row"><dt>Missão</dt><dd>{{ valorOuADefinir(m.missao) }}</dd></div>
+        <div class="fact-row"><dt>Início</dt><dd>{{ valorOuADefinir(m.iniciomissao) }}</dd></div>
+        <div class="fact-row"><dt>Final</dt><dd>{{ valorOuADefinir(m.finalmissao) }}</dd></div>
+        <div class="fact-row"><dt>Aniversário</dt><dd>{{ aniversarioFmt(m.aniversario) }}</dd></div>
+      </dl>
+
+      <div class="actions">
+        <button class="action-btn" (click)="acaoFutura('Enviar Mensagem')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Enviar Mensagem
+        </button>
+        <button class="action-btn" (click)="acaoFutura('Ler Mensagens')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H7l-3 3z"/></svg>
+          Ler Mensagens
+        </button>
+        <button class="action-btn" (click)="acaoFutura('Enviar Email')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          Enviar Email
+        </button>
+        <button class="action-btn" (click)="acaoFutura('Ir para Google Fotos')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg>
+          Ir para Google Fotos
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">
+    Dados da Estaca Betim. Os 4 botões de ação ainda não têm função definida.
+  </footer>
+</div>
+
+<div class="toast" [class.show]="toastMsg">{{ toastMsg }}</div>
