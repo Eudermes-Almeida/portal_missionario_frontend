@@ -7,6 +7,10 @@ import { DadosMissionarioDTO, MissionarioApiService } from '../../services/missi
 // missionarios retornados no futuro (ver protótipo aprovado).
 const STATUSES = ['No Campo', 'Sede da Igreja', 'Preenchendo', 'Finalizada'];
 
+// Opcao extra no filtro de unidade: representa a estaca inteira, nao uma ala/ramo
+// especifica, entao selecionar ela equivale a nao filtrar por unidade nenhuma.
+const ESTACA_BETIM = 'Estaca Betim';
+
 const MESES = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
@@ -49,9 +53,11 @@ export class CarrosselMissionariosComponent implements OnInit {
   }
 
   // Unidades vem do proprio dado carregado (nao hardcoded) -- se uma ala/ramo novo aparecer
-  // na planilha, a lista de filtro acompanha sem precisar mexer no codigo.
+  // na planilha, a lista de filtro acompanha sem precisar mexer no codigo. "Estaca Betim" é
+  // adicionada à parte, no topo, como opção para ver todas as unidades de uma vez.
   get unidades(): string[] {
-    return Array.from(new Set(this.todos.map(m => m.unidade))).sort((a, b) => a.localeCompare(b));
+    const wards = Array.from(new Set(this.todos.map(m => m.unidade))).sort((a, b) => a.localeCompare(b));
+    return [ESTACA_BETIM, ...wards];
   }
 
   private buscarDados(): void {
@@ -74,7 +80,7 @@ export class CarrosselMissionariosComponent implements OnInit {
 
   aplicarFiltros(): void {
     this.lista = this.todos.filter(m =>
-      (!this.filtroUnidade || m.unidade === this.filtroUnidade) &&
+      (!this.filtroUnidade || this.filtroUnidade === ESTACA_BETIM || m.unidade === this.filtroUnidade) &&
       (!this.filtroStatus || m.status === this.filtroStatus)
     );
     this.index = 0;
@@ -125,6 +131,8 @@ export class CarrosselMissionariosComponent implements OnInit {
   limparFiltros(): void {
     this.filtroUnidade = null;
     this.filtroStatus = null;
+    this.painelUnidadeAberto = false;
+    this.painelStatusAberto = false;
     this.aplicarFiltros();
   }
 

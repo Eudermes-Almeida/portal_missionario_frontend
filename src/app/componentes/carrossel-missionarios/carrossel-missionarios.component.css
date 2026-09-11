@@ -124,20 +124,21 @@ header.top {
   width: 54px;
   height: 54px;
   border-radius: 16px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  color: var(--royal);
+  background: var(--btn-grad);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-ink);
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(20, 40, 110, 0.12);
+  box-shadow: 0 8px 20px rgba(10, 17, 48, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform .15s ease, box-shadow .15s ease;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
 }
 
 .nav-btn:hover:not(:disabled) {
+  background: var(--btn-grad-hover);
   transform: translateY(-2px);
-  box-shadow: 0 12px 26px rgba(20, 40, 110, 0.20);
+  box-shadow: 0 0 24px var(--btn-glow), 0 12px 26px rgba(10, 17, 48, 0.4);
 }
 
 .nav-btn:active:not(:disabled) {
@@ -165,23 +166,24 @@ header.top {
 }
 
 .select-btn {
-  position: absolute;
-  top: 18px;
-  right: 18px;
+  width: 100%;
+  margin-top: 16px;
   font-family: 'Baloo 2', sans-serif;
   font-weight: 600;
-  font-size: .78rem;
-  color: var(--royal);
-  background: #ffffff;
-  border: none;
+  font-size: .86rem;
+  color: var(--btn-ink);
+  background: var(--btn-grad);
+  border: 1px solid var(--btn-border);
   border-radius: 999px;
-  padding: 9px 16px;
+  padding: 11px 16px;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(13, 29, 77, 0.28);
+  box-shadow: 0 0 18px var(--btn-glow), 0 6px 16px rgba(10, 17, 48, 0.35);
+  transition: background .15s ease, box-shadow .15s ease;
 }
 
 .select-btn:hover {
-  filter: brightness(1.04);
+  background: var(--btn-grad-hover);
+  box-shadow: 0 0 26px var(--btn-glow), 0 8px 20px rgba(10, 17, 48, 0.4);
 }
 
 .avatar-frame {
@@ -218,35 +220,7 @@ header.top {
   font-size: 1.12rem;
   margin: 0;
   color: #ffffff;
-}
-
-.card-sub {
-  margin: 3px 0 0;
-  font-size: .86rem;
-  color: rgba(255, 255, 255, 0.75);
-  font-weight: 600;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  font-weight: 700;
-  font-size: .74rem;
-  letter-spacing: .02em;
-  padding: 6px 12px;
-  border-radius: 999px;
-}
-
-.badge.no-campo {
-  color: #8a5b00;
-  background: #fff1d6;
-}
-
-.badge.outro {
-  color: var(--royal);
-  background: #e4ebff;
+  text-align: center;
 }
 
 .empty-card {
@@ -304,35 +278,43 @@ header.top {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  color: var(--ink);
+  background: var(--btn-grad);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-ink);
   font-family: 'Nunito Sans', sans-serif;
   font-size: .86rem;
   font-weight: 700;
   padding: 10px 16px;
   border-radius: 999px;
   cursor: pointer;
-  transition: border-color .15s ease, color .15s ease;
-  box-shadow: 0 4px 14px rgba(20, 40, 110, 0.08);
+  transition: background .15s ease, box-shadow .15s ease;
+  box-shadow: 0 4px 14px rgba(10, 17, 48, 0.3);
+}
+
+.toggle-chip:hover {
+  background: var(--btn-grad-hover);
 }
 
 .toggle-chip .radio {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 1.5px solid #b7c1e6;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
   flex: none;
   position: relative;
 }
 
 .toggle-chip.active {
-  border-color: var(--royal);
-  color: var(--royal);
+  background: var(--btn-selected-grad);
+  box-shadow: 0 0 18px var(--btn-selected-glow), 0 4px 14px rgba(6, 35, 26, 0.35);
+}
+
+.toggle-chip.active:hover {
+  background: var(--btn-selected-grad-hover);
 }
 
 .toggle-chip.active .radio {
-  border-color: var(--royal);
+  border-color: #ffffff;
 }
 
 .toggle-chip.active .radio::after {
@@ -340,13 +322,7 @@ header.top {
   position: absolute;
   inset: 2.5px;
   border-radius: 50%;
-  background: var(--royal);
-}
-
-.toggle-chip .count {
-  font-size: .74rem;
-  color: var(--ink-dim);
-  font-weight: 600;
+  background: #ffffff;
 }
 
 .filter-panel {
@@ -366,23 +342,27 @@ header.top {
   font-family: 'Nunito Sans', sans-serif;
   font-weight: 700;
   font-size: .82rem;
-  color: var(--ink-dim);
-  background: #f3f5fc;
-  border: 1px solid transparent;
+  color: var(--btn-ink);
+  background: var(--btn-grad);
+  border: 1px solid var(--btn-border);
   border-radius: 999px;
   padding: 7px 13px;
   cursor: pointer;
-  transition: .15s ease;
+  transition: background .15s ease, box-shadow .15s ease;
 }
 
 .pill:hover {
-  background: #e7ecfb;
-  color: var(--ink);
+  background: var(--btn-grad-hover);
 }
 
 .pill.on {
-  color: #ffffff;
-  background: linear-gradient(120deg, var(--sky), var(--royal));
+  color: var(--btn-ink);
+  background: var(--btn-selected-grad);
+  box-shadow: 0 0 14px var(--btn-selected-glow);
+}
+
+.pill.on:hover {
+  background: var(--btn-selected-grad-hover);
 }
 
 .clear-link {
@@ -413,15 +393,19 @@ header.top {
   gap: 6px;
   font-size: .86rem;
   font-weight: 700;
-  color: var(--ink-dim);
-  background: none;
-  border: none;
+  color: var(--btn-ink);
+  background: var(--btn-grad);
+  border: 1px solid var(--btn-border);
+  border-radius: 999px;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 9px 16px;
+  box-shadow: 0 4px 14px rgba(10, 17, 48, 0.3);
+  transition: background .15s ease, box-shadow .15s ease;
 }
 
 .back-link:hover {
-  color: var(--royal);
+  background: var(--btn-grad-hover);
+  box-shadow: 0 0 18px var(--btn-glow), 0 6px 16px rgba(10, 17, 48, 0.35);
 }
 
 .back-link svg {
@@ -527,9 +511,9 @@ header.top {
   font-family: 'Nunito Sans', sans-serif;
   font-weight: 700;
   font-size: .84rem;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: var(--btn-ink);
+  background: var(--btn-grad-soft);
+  border: 1px solid var(--btn-border);
   border-radius: 12px;
   padding: 12px 10px;
   cursor: pointer;
@@ -541,7 +525,7 @@ header.top {
 }
 
 .action-btn:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: var(--btn-grad-soft-hover);
 }
 
 .action-btn:active {
@@ -587,7 +571,25 @@ footer.note {
 }
 
 @media (max-width: 520px) {
-  .actions {
-    grid-template-columns: 1fr;
+  /* Em telas estreitas, 2 nav-btn de 54px + o card de 82vw não cabem lado a lado
+     e o botão direito acaba empurrado para fora da viewport. Encolhe os dois. */
+  .carousel-row {
+    gap: 8px;
+  }
+
+  .nav-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .nav-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .card,
+  .empty-card {
+    width: min(360px, calc(100vw - 136px));
   }
 }
