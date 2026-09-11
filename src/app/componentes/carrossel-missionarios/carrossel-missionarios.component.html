@@ -107,11 +107,11 @@
       </dl>
 
       <div class="actions">
-        <button class="action-btn" (click)="acaoFutura('Enviar Mensagem')">
+        <button class="action-btn" (click)="abrirModalMensagem()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           Enviar Mensagem
         </button>
-        <button class="action-btn" (click)="acaoFutura('Ler Mensagens')">
+        <button class="action-btn" (click)="abrirModalLerMensagens()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H7l-3 3z"/></svg>
           Ler Mensagens
         </button>
@@ -136,8 +136,72 @@
   </div>
 
   <footer class="note">
-    Dados da Estaca Betim. Os 4 botões de ação ainda não têm função definida.
+    Dados da Estaca Betim. Os demais botões de ação ainda não têm função definida.
   </footer>
+</div>
+
+<div class="modal-overlay" *ngIf="modalMensagemAberto && selecionado as m" (click)="fecharModalMensagem()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <button class="modal-fechar" (click)="fecharModalMensagem()" type="button" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <h2 class="modal-titulo">Enviar Mensagem</h2>
+    <p class="modal-aviso">Esta mensagem ficará pública no perfil de <strong>{{ m.nomemissao }}</strong>.</p>
+
+    <textarea
+      class="modal-textarea"
+      [(ngModel)]="textoMensagem"
+      [maxlength]="MENSAGEM_MAX"
+      [disabled]="enviandoMensagem"
+      placeholder="Escreva sua mensagem para o missionário..."
+      rows="5"
+    ></textarea>
+    <div class="modal-contador" [class.limite]="caracteresRestantes <= 50">{{ caracteresRestantes }} caracteres restantes</div>
+
+    <p class="modal-erro" *ngIf="erroMensagem">{{ erroMensagem }}</p>
+
+    <button
+      class="pm-auth-btn modal-enviar"
+      type="button"
+      [disabled]="!textoMensagem.trim() || enviandoMensagem"
+      (click)="enviarMensagem()"
+    >
+      {{ enviandoMensagem ? 'Enviando...' : 'Enviar Mensagem' }}
+    </button>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="modalLerMensagensAberto && selecionado as m" (click)="fecharModalLerMensagens()">
+  <div class="modal-card modal-card-lista" (click)="$event.stopPropagation()">
+    <button class="modal-fechar" (click)="fecharModalLerMensagens()" type="button" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <h2 class="modal-titulo">Mensagens para {{ m.nomemissao }}</h2>
+
+    <p class="modal-lista-carregando" *ngIf="carregandoMensagens">Carregando mensagens...</p>
+    <p class="modal-erro" *ngIf="erroCarregarMensagens">{{ erroCarregarMensagens }}</p>
+
+    <div class="modal-lista" *ngIf="!carregandoMensagens && !erroCarregarMensagens">
+      <p class="modal-lista-vazia" *ngIf="!mensagensCarregadas.length">Nenhuma mensagem ainda. Seja o primeiro a enviar uma!</p>
+
+      <div class="msg-card" *ngFor="let msg of mensagensCarregadas">
+        <div class="msg-card-topo">
+          <div>
+            <p class="msg-remetente">{{ msg.remetenteNome }}</p>
+            <p class="msg-unidade">{{ msg.remetenteUnidade }}</p>
+          </div>
+          <p class="msg-data">{{ formatarDia(msg.dia) }} &middot; {{ formatarHora(msg.hora) }}</p>
+        </div>
+        <p class="msg-texto">{{ msg.mensagem }}</p>
+        <button class="msg-curtir-btn" type="button" (click)="acaoFutura('Curtir Mensagem')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+          Curtir
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" [class.show]="toastMsg">{{ toastMsg }}</div>

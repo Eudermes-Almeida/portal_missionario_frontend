@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DadosMissionarioDTO, MissionarioApiService } from '../../services/missionario-api.service';
+import { MensagemApiService, MensagemDTO } from '../../services/mensagem-api.service';
 
 // 4 opcoes fixas de status (nao derivadas do dado carregado): "Finalizada" e mantida mesmo
 // sem nenhum missionario com esse status hoje, decisao explicita do usuario pensando em
@@ -19,7 +21,7 @@ const MESES = [
 @Component({
   selector: 'app-carrossel-missionarios',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './carrossel-missionarios.component.html',
   styleUrl: './carrossel-missionarios.component.css',
 })
@@ -44,9 +46,23 @@ export class CarrosselMissionariosComponent implements OnInit {
   toastMsg: string | null = null;
   private toastTimer?: ReturnType<typeof setTimeout>;
 
+  readonly MENSAGEM_MAX = 1000;
+  modalMensagemAberto = false;
+  textoMensagem = '';
+  enviandoMensagem = false;
+  erroMensagem: string | null = null;
+
+  modalLerMensagensAberto = false;
+  carregandoMensagens = false;
+  erroCarregarMensagens: string | null = null;
+  mensagensCarregadas: MensagemDTO[] = [];
+
   readonly statuses = STATUSES;
 
-  constructor(private missionarioApi: MissionarioApiService) {}
+  constructor(
+    private missionarioApi: MissionarioApiService,
+    private mensagemApi: MensagemApiService,
+  ) {}
 
   ngOnInit(): void {
     this.buscarDados();
@@ -150,9 +166,98 @@ export class CarrosselMissionariosComponent implements OnInit {
   // Contexto de cada botao fica para o futuro (deliberado) -- por enquanto so confirma
   // visualmente que o clique registrou.
   acaoFutura(nome: string): void {
-    this.toastMsg = `"${nome}" — em breve`;
+    this.mostrarToast(`"${nome}" — em breve`);
+  }
+
+  private mostrarToast(msg: string): void {
+    this.toastMsg = msg;
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => (this.toastMsg = null), 1800);
+  }
+
+  abrirModalMensagem(): void {
+    this.textoMensagem = '';
+    this.erroMensagem = null;
+    this.modalMensagemAberto = true;
+  }
+
+  fecharModalMensagem(): void {
+    if (this.enviandoMensagem) {
+      return;
+    }
+    this.modalMensagemAberto = false;
+  }
+
+  abrirModalLerMensagens(): void {
+    if (!this.selecionado) {
+      return;
+    }
+    this.modalLerMensagensAberto = true;
+    this.carregandoMensagens = true;
+    this.erroCarregarMensagens = null;
+    this.mensagensCarregadas = [];
+
+    this.mensagemApi.buscaMensagensPorMissionario(this.selecionado.id).subscribe({
+      next: (mensagens) => {
+        this.mensagensCarregadas = mensagens;
+        this.carregandoMensagens = false;
+      },
+      error: () => {
+        this.carregandoMensagens = false;
+        this.erroCarregarMensagens = 'Não foi possível carregar as mensagens. Tente novamente.';
+      },
+    });
+  }
+
+  fecharModalLerMensagens(): void {
+    this.modalLerMensagensAberto = false;
+  }
+
+  formatarDia(dia: string): string {
+    const partes = dia?.split('-') ?? [];
+    return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : dia;
+  }
+
+  formatarHora(hora: string): string {
+    return hora?.slice(0, 5) ?? hora;
+  }
+
+  @HostListener('document:keydown.escape')
+  aoPressionarEsc(): void {
+    if (this.modalMensagemAberto) {
+      this.fecharModalMensagem();
+    }
+    if (this.modalLerMensagensAberto) {
+      this.fecharModalLerMensagens();
+    }
+  }
+
+  get caracteresRestantes(): number {
+    return this.MENSAGEM_MAX - this.textoMensagem.length;
+  }
+
+  enviarMensagem(): void {
+    const texto = this.textoMensagem.trim();
+    if (!texto || !this.selecionado || this.enviandoMensagem) {
+      return;
+    }
+
+    this.enviandoMensagem = true;
+    this.erroMensagem = null;
+
+    this.mensagemApi
+      .enviarMensagem({ destinatarioTipo: 'MISSIONARIO', destinatarioId: this.selecionado.id, mensagem: texto })
+      .subscribe({
+        next: () => {
+          this.enviandoMensagem = false;
+          this.modalMensagemAberto = false;
+          this.mostrarToast('Mensagem enviada!');
+        },
+        error: (erro) => {
+          this.enviandoMensagem = false;
+          this.erroMensagem = typeof erro?.error === 'string' ? erro.error : 'Não foi possível enviar a mensagem. Tente novamente.';
+        },
+      });
   }
 
   valorOuADefinir(v: string): string {
