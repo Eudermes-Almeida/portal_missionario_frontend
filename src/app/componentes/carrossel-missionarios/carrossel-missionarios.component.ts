@@ -65,6 +65,13 @@ export class CarrosselMissionariosComponent implements OnInit {
   enviandoMensagem = false;
   erroMensagem: string | null = null;
 
+  readonly EMAIL_MENSAGEM_MAX = 10000;
+  modalEmailAberto = false;
+  textoEmail = '';
+  emailRemetenteOpcional = '';
+  enviandoEmail = false;
+  erroEmail: string | null = null;
+
   modalLerMensagensAberto = false;
   carregandoMensagens = false;
   erroCarregarMensagens: string | null = null;
@@ -210,6 +217,60 @@ export class CarrosselMissionariosComponent implements OnInit {
     this.modalMensagemAberto = false;
   }
 
+  // "temEmail" vem do backend sem o endereço em si (ver DadosMissionarioDTO) -- se o
+  // missionário ainda não tem email cadastrado, avisa com toast em vez de abrir o modal pra
+  // um envio que sempre falharia.
+  abrirModalEmail(): void {
+    if (!this.selecionado) {
+      return;
+    }
+    if (!this.selecionado.temEmail) {
+      this.mostrarToast('Este missionário ainda não tem email cadastrado.');
+      return;
+    }
+    this.textoEmail = '';
+    this.emailRemetenteOpcional = '';
+    this.erroEmail = null;
+    this.modalEmailAberto = true;
+  }
+
+  fecharModalEmail(): void {
+    if (this.enviandoEmail) {
+      return;
+    }
+    this.modalEmailAberto = false;
+  }
+
+  get caracteresRestantesEmail(): number {
+    return this.EMAIL_MENSAGEM_MAX - this.textoEmail.length;
+  }
+
+  enviarEmail(): void {
+    const texto = this.textoEmail.trim();
+    if (!texto || !this.selecionado || this.enviandoEmail) {
+      return;
+    }
+
+    this.enviandoEmail = true;
+    this.erroEmail = null;
+
+    const emailRemetente = this.emailRemetenteOpcional.trim();
+
+    this.missionarioApi
+      .enviarEmail(this.selecionado.id, { mensagem: texto, emailRemetente: emailRemetente || undefined })
+      .subscribe({
+        next: () => {
+          this.enviandoEmail = false;
+          this.modalEmailAberto = false;
+          this.mostrarToast('Email enviado!');
+        },
+        error: (erro) => {
+          this.enviandoEmail = false;
+          this.erroEmail = typeof erro?.error === 'string' ? erro.error : 'Não foi possível enviar o email. Tente novamente.';
+        },
+      });
+  }
+
   abrirModalLerMensagens(): void {
     if (!this.selecionado) {
       return;
@@ -321,6 +382,9 @@ export class CarrosselMissionariosComponent implements OnInit {
     }
     if (this.modalLerMensagensAberto) {
       this.fecharModalLerMensagens();
+    }
+    if (this.modalEmailAberto) {
+      this.fecharModalEmail();
     }
   }
 

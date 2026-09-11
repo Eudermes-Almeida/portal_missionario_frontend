@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 // Mesmos campos do DadosMissionariosDTO do backend (id_planilha e registromembro nunca
-// saem pela API, ver DadosMissionariosDTO.java).
+// saem pela API, ver DadosMissionariosDTO.java). O email em si também não sai -- só
+// "temEmail" (booleano), pra saber se o botão "Enviar Email" pode ser oferecido sem o front
+// nunca receber o endereço de verdade do missionário.
 export interface DadosMissionarioDTO {
   id: number;
   unidade: string;
@@ -18,6 +20,12 @@ export interface DadosMissionarioDTO {
   missao: string;
   aniversario: string;
   linkfoto: string;
+  temEmail: boolean;
+}
+
+export interface EnviarEmailRequest {
+  mensagem: string;
+  emailRemetente?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,5 +40,9 @@ export class MissionarioApiService {
   buscaDadosMissionarios(unidade: string = 'Estaca Betim'): Observable<DadosMissionarioDTO[]> {
     const params = new HttpParams().set('unidade', unidade);
     return this.http.get<DadosMissionarioDTO[]>(`${this.baseUrl}/dadosmissionarios`, { params });
+  }
+
+  enviarEmail(missionarioId: number, request: EnviarEmailRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/dadosmissionarios/${missionarioId}/email`, request);
   }
 }

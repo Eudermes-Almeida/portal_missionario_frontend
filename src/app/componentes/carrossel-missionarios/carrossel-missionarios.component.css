@@ -656,6 +656,15 @@ header.top {
   color: var(--ink-dim);
 }
 
+.modal-textarea-grande {
+  min-height: 220px;
+}
+
+.modal-campo-email {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
 .modal-contador {
   margin-top: 6px;
   text-align: right;

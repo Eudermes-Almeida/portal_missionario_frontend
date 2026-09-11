@@ -115,7 +115,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H7l-3 3z"/></svg>
           Ler Mensagens
         </button>
-        <button class="action-btn" (click)="acaoFutura('Enviar Email')">
+        <button class="action-btn" (click)="abrirModalEmail()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
           Enviar Email
         </button>
@@ -168,6 +168,49 @@
       (click)="enviarMensagem()"
     >
       {{ enviandoMensagem ? 'Enviando...' : 'Enviar Mensagem' }}
+    </button>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="modalEmailAberto && selecionado as m" (click)="fecharModalEmail()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <button class="modal-fechar" (click)="fecharModalEmail()" type="button" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <h2 class="modal-titulo">Enviar Email</h2>
+    <p class="modal-aviso">Este email vai direto pra caixa de entrada de <strong>{{ m.nomemissao }}</strong>.</p>
+
+    <textarea
+      class="modal-textarea modal-textarea-grande"
+      [(ngModel)]="textoEmail"
+      [maxlength]="EMAIL_MENSAGEM_MAX"
+      [disabled]="enviandoEmail"
+      placeholder="Escreva seu email para o missionário..."
+      rows="8"
+    ></textarea>
+    <div class="modal-contador" [class.limite]="caracteresRestantesEmail <= 300">{{ caracteresRestantesEmail }} caracteres restantes</div>
+
+    <div class="pm-auth-campo modal-campo-email">
+      <label for="emailRemetenteInput">Caso deseje enviar seu endereço de email para este missionário lhe retornar, escreva aqui corretamente o seu endereço eletrônico</label>
+      <input
+        id="emailRemetenteInput"
+        type="email"
+        [(ngModel)]="emailRemetenteOpcional"
+        [disabled]="enviandoEmail"
+        placeholder="seu@email.com (opcional)"
+      />
+    </div>
+
+    <p class="modal-erro" *ngIf="erroEmail">{{ erroEmail }}</p>
+
+    <button
+      class="pm-auth-btn modal-enviar"
+      type="button"
+      [disabled]="!textoEmail.trim() || enviandoEmail"
+      (click)="enviarEmail()"
+    >
+      {{ enviandoEmail ? 'Enviando...' : 'Enviar Email' }}
     </button>
   </div>
 </div>
