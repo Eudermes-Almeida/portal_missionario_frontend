@@ -1,0 +1,107 @@
+<div class="pm-auth-tela">
+  <div class="pm-auth-card">
+    <div class="pm-auth-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    </div>
+    <h1 class="pm-auth-title">Primeiro Acesso</h1>
+    <p class="pm-auth-subtitle">Estaca Betim</p>
+
+    <!-- ETAPA 1: identificação -->
+    <ng-container *ngIf="etapa === 'identificacao'">
+      <h2 class="pm-auth-card-titulo">Quem é você?</h2>
+      <p class="pm-auth-card-texto">Informe sua data de nascimento e os últimos 4 caracteres do seu registro de membro.</p>
+
+      <div class="pm-auth-campo">
+        <label for="nascimentoInput">Data de nascimento</label>
+        <input
+          id="nascimentoInput"
+          type="text"
+          inputmode="numeric"
+          maxlength="8"
+          [(ngModel)]="nascimento"
+          [disabled]="carregando"
+          placeholder="DDMMAAAA" />
+        <small>Somente números, sem barra. Exemplo: 19101996</small>
+      </div>
+
+      <div class="pm-auth-campo">
+        <label for="registroInput">Últimos 4 caracteres do registro de membro</label>
+        <input
+          id="registroInput"
+          type="text"
+          maxlength="4"
+          [(ngModel)]="ultimosQuatroRegistro"
+          (keyup.enter)="identificar()"
+          [disabled]="carregando"
+          placeholder="Ex: 3742" />
+      </div>
+
+      <p class="pm-auth-erro" *ngIf="erro">{{ erro }}</p>
+
+      <button type="button" class="pm-auth-btn" [disabled]="carregando" (click)="identificar()">
+        {{ carregando ? 'Verificando...' : 'Continuar' }}
+      </button>
+
+      <button type="button" class="pm-auth-link" (click)="voltarParaLogin.emit()">
+        Já tem login? Voltar para a tela de entrar
+      </button>
+    </ng-container>
+
+    <!-- ETAPA 2: confirmação de identidade -->
+    <ng-container *ngIf="etapa === 'confirmacao'">
+      <h2 class="pm-auth-card-titulo">Confirme sua identidade</h2>
+
+      <p class="pm-auth-nome-confirmacao">Você é {{ membroNome }}?</p>
+
+      <div class="pm-auth-linha-botoes">
+        <button type="button" class="pm-auth-btn" (click)="confirmarIdentidade()">Sim, sou eu</button>
+        <button type="button" class="pm-auth-btn pm-auth-btn-secundario" (click)="negarIdentidade()">Não</button>
+      </div>
+    </ng-container>
+
+    <!-- ETAPA 3: cadastro de login/senha -->
+    <ng-container *ngIf="etapa === 'cadastro'">
+      <h2 class="pm-auth-card-titulo">Crie seu login e senha</h2>
+
+      <div class="pm-auth-campo">
+        <label for="novoLoginInput">Login</label>
+        <input
+          id="novoLoginInput"
+          type="text"
+          [(ngModel)]="login"
+          [disabled]="carregando"
+          autocomplete="username"
+          placeholder="Escolha um login" />
+      </div>
+
+      <div class="pm-auth-campo">
+        <label for="novaSenhaInput">Senha</label>
+        <input
+          id="novaSenhaInput"
+          type="password"
+          [(ngModel)]="senha"
+          [disabled]="carregando"
+          autocomplete="new-password"
+          placeholder="Pelo menos 4 caracteres" />
+      </div>
+
+      <div class="pm-auth-campo">
+        <label for="confirmarSenhaInput">Confirme a senha</label>
+        <input
+          id="confirmarSenhaInput"
+          type="password"
+          [(ngModel)]="confirmarSenha"
+          (keyup.enter)="cadastrar()"
+          [disabled]="carregando"
+          autocomplete="new-password"
+          placeholder="Digite a senha novamente" />
+      </div>
+
+      <p class="pm-auth-erro" *ngIf="erro">{{ erro }}</p>
+
+      <button type="button" class="pm-auth-btn" [disabled]="carregando" (click)="cadastrar()">
+        {{ carregando ? 'Salvando...' : 'Concluir cadastro' }}
+      </button>
+    </ng-container>
+  </div>
+</div>

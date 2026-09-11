@@ -1,1 +1,17 @@
-<app-pai></app-pai>
+<app-login-senha
+  *ngIf="tela === 'login'"
+  [mensagemInicial]="mensagemLogin"
+  (autenticado)="aoAutenticar()"
+  (irParaPrimeiroAcesso)="irParaPrimeiroAcesso()">
+</app-login-senha>
+
+<app-primeiro-acesso
+  *ngIf="tela === 'primeiro-acesso'"
+  (autenticado)="aoAutenticar()"
+  (voltarParaLogin)="irParaLogin()">
+</app-primeiro-acesso>
+
+<app-pai
+  *ngIf="tela === 'dashboard'"
+  (sair)="sair()">
+</app-pai>

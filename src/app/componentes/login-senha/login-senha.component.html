@@ -1,0 +1,45 @@
+<div class="pm-auth-tela">
+  <div class="pm-auth-card">
+    <div class="pm-auth-badge">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2 L14.5 9.5 L22 12 L14.5 14.5 L12 22 L9.5 14.5 L2 12 L9.5 9.5 Z" fill="#ffffff"/></svg>
+    </div>
+    <h1 class="pm-auth-title">Portal Missionário</h1>
+    <p class="pm-auth-subtitle">Estaca Betim</p>
+
+    <h2 class="pm-auth-card-titulo">Entrar</h2>
+
+    <div class="pm-auth-campo">
+      <label for="loginInput">Login</label>
+      <input
+        id="loginInput"
+        type="text"
+        [(ngModel)]="login"
+        (keyup.enter)="entrar()"
+        [disabled]="carregando"
+        autocomplete="username"
+        placeholder="Seu login" />
+    </div>
+
+    <div class="pm-auth-campo">
+      <label for="senhaInput">Senha</label>
+      <input
+        id="senhaInput"
+        type="password"
+        [(ngModel)]="senha"
+        (keyup.enter)="entrar()"
+        [disabled]="carregando"
+        autocomplete="current-password"
+        placeholder="Sua senha" />
+    </div>
+
+    <p class="pm-auth-erro" *ngIf="erro">{{ erro }}</p>
+
+    <button type="button" class="pm-auth-btn" [disabled]="carregando" (click)="entrar()">
+      {{ carregando ? 'Entrando...' : 'Entrar' }}
+    </button>
+
+    <button type="button" class="pm-auth-link" (click)="irParaPrimeiroAcesso.emit()">
+      Primeiro acesso? Cadastre seu login aqui
+    </button>
+  </div>
+</div>

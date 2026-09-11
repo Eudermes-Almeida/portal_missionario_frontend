@@ -1,3 +1,44 @@
 :host {
   display: block;
 }
+
+.pm-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 10px clamp(16px, 4vw, 40px);
+  background: var(--deepest);
+}
+
+.pm-topbar-nome {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: .82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pm-topbar-sair {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+
+.pm-topbar-sair:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.pm-topbar-sair svg {
+  width: 14px;
+  height: 14px;
+}
