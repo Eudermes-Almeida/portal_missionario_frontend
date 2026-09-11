@@ -2,7 +2,7 @@ import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DadosMissionarioDTO, MissionarioApiService } from '../../services/missionario-api.service';
-import { MensagemApiService, MensagemDTO } from '../../services/mensagem-api.service';
+import { AutorReacao, MensagemApiService, MensagemDTO, TipoReacao } from '../../services/mensagem-api.service';
 
 // 4 opcoes fixas de status (nao derivadas do dado carregado): "Finalizada" e mantida mesmo
 // sem nenhum missionario com esse status hoje, decisao explicita do usuario pensando em
@@ -17,6 +17,19 @@ const MESES = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
 ];
+
+// As 5 reações fixas do botão "Manifestar" (mesma ordem em que aparecem no seletor), espelhando
+// o CHECK ck_mensagem_reacao_tipo no banco.
+const REACOES: { tipo: TipoReacao; emoji: string; label: string }[] = [
+  { tipo: 'CURTIDA', emoji: '👍', label: 'Curtida' },
+  { tipo: 'DESLIKE', emoji: '👎', label: 'Não curti' },
+  { tipo: 'CORACAO', emoji: '❤️', label: 'Coração' },
+  { tipo: 'SURPRESA', emoji: '😮', label: 'Surpresa' },
+  { tipo: 'TRISTEZA', emoji: '😢', label: 'Tristeza' },
+];
+const EMOJI_POR_TIPO: Record<TipoReacao, string> = Object.fromEntries(
+  REACOES.map(r => [r.tipo, r.emoji])
+) as Record<TipoReacao, string>;
 
 @Component({
   selector: 'app-carrossel-missionarios',
@@ -58,6 +71,15 @@ export class CarrosselMissionariosComponent implements OnInit {
   mensagensCarregadas: MensagemDTO[] = [];
 
   readonly statuses = STATUSES;
+  readonly reacoesDisponiveis = REACOES;
+
+  manifestarAbertoId: number | null = null;
+  reagindoId: number | null = null;
+
+  detalheReacaoAberto: { mensagemId: number; tipo: TipoReacao } | null = null;
+  carregandoDetalheReacao = false;
+  erroDetalheReacao: string | null = null;
+  autoresReacao: AutorReacao[] = [];
 
   constructor(
     private missionarioApi: MissionarioApiService,
@@ -211,6 +233,71 @@ export class CarrosselMissionariosComponent implements OnInit {
 
   fecharModalLerMensagens(): void {
     this.modalLerMensagensAberto = false;
+    this.manifestarAbertoId = null;
+    this.detalheReacaoAberto = null;
+  }
+
+  toggleManifestar(mensagemId: number): void {
+    this.detalheReacaoAberto = null;
+    this.manifestarAbertoId = this.manifestarAbertoId === mensagemId ? null : mensagemId;
+  }
+
+  emojiDoTipo(tipo: TipoReacao): string {
+    return EMOJI_POR_TIPO[tipo] ?? '';
+  }
+
+  // Clicar num pill de reação (👍 3, por exemplo) abre um popover ancorado nele com quem
+  // reagiu daquele jeito -- clicar de novo no mesmo pill fecha (mesmo padrão de toggle do
+  // seletor "Manifestar").
+  abrirDetalheReacao(msg: MensagemDTO, tipo: TipoReacao): void {
+    this.manifestarAbertoId = null;
+
+    if (this.detalheReacaoAberto?.mensagemId === msg.id && this.detalheReacaoAberto?.tipo === tipo) {
+      this.detalheReacaoAberto = null;
+      return;
+    }
+
+    this.detalheReacaoAberto = { mensagemId: msg.id, tipo };
+    this.carregandoDetalheReacao = true;
+    this.erroDetalheReacao = null;
+    this.autoresReacao = [];
+
+    this.mensagemApi.listaAutoresReacao(msg.id, tipo).subscribe({
+      next: (autores) => {
+        this.autoresReacao = autores;
+        this.carregandoDetalheReacao = false;
+      },
+      error: () => {
+        this.carregandoDetalheReacao = false;
+        this.erroDetalheReacao = 'Não foi possível carregar quem reagiu. Tente novamente.';
+      },
+    });
+  }
+
+  // Clicar de novo no mesmo tipo que já era "minhaReacao" remove a reação (toggle, decisão
+  // explícita do usuário); clicar em outro tipo troca. O backend já resolve esse
+  // comportamento (MensagemReacaoService.reagir) -- aqui só aplica o resultado devolvido.
+  reagir(msg: MensagemDTO, tipo: TipoReacao): void {
+    if (this.reagindoId === msg.id) {
+      return;
+    }
+    this.reagindoId = msg.id;
+
+    this.mensagemApi.reagir(msg.id, tipo).subscribe({
+      next: (resposta) => {
+        msg.reacoes = resposta.reacoes;
+        msg.minhaReacao = resposta.minhaReacao;
+        this.reagindoId = null;
+        this.manifestarAbertoId = null;
+        if (this.detalheReacaoAberto?.mensagemId === msg.id) {
+          this.detalheReacaoAberto = null;
+        }
+      },
+      error: () => {
+        this.reagindoId = null;
+        this.mostrarToast('Não foi possível registrar sua reação. Tente novamente.');
+      },
+    });
   }
 
   formatarDia(dia: string): string {
@@ -224,6 +311,11 @@ export class CarrosselMissionariosComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   aoPressionarEsc(): void {
+    if (this.manifestarAbertoId !== null || this.detalheReacaoAberto !== null) {
+      this.manifestarAbertoId = null;
+      this.detalheReacaoAberto = null;
+      return;
+    }
     if (this.modalMensagemAberto) {
       this.fecharModalMensagem();
     }

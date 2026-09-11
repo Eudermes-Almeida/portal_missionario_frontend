@@ -195,10 +195,55 @@
           <p class="msg-data">{{ formatarDia(msg.dia) }} &middot; {{ formatarHora(msg.hora) }}</p>
         </div>
         <p class="msg-texto">{{ msg.mensagem }}</p>
-        <button class="msg-curtir-btn" type="button" (click)="acaoFutura('Curtir Mensagem')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
-          Curtir
-        </button>
+
+        <div class="msg-reacoes" *ngIf="msg.reacoes?.length">
+          <div class="reacao-item" *ngFor="let r of msg.reacoes">
+            <button
+              class="reacao-pill"
+              type="button"
+              [class.minha]="r.tipoReacao === msg.minhaReacao"
+              (click)="abrirDetalheReacao(msg, r.tipoReacao)"
+            >
+              <span class="reacao-pill-emoji">{{ emojiDoTipo(r.tipoReacao) }}</span>{{ r.quantidade }}
+            </button>
+
+            <div
+              class="reacao-detalhe-popover"
+              *ngIf="detalheReacaoAberto?.mensagemId === msg.id && detalheReacaoAberto?.tipo === r.tipoReacao"
+            >
+              <p class="reacao-detalhe-titulo">{{ emojiDoTipo(r.tipoReacao) }} quem reagiu</p>
+              <p class="reacao-detalhe-carregando" *ngIf="carregandoDetalheReacao">Carregando...</p>
+              <p class="reacao-detalhe-erro" *ngIf="erroDetalheReacao">{{ erroDetalheReacao }}</p>
+              <ul class="reacao-detalhe-lista" *ngIf="!carregandoDetalheReacao && !erroDetalheReacao">
+                <li *ngFor="let a of autoresReacao">
+                  <span class="reacao-detalhe-nome">{{ a.autorNome }}</span>
+                  <span class="reacao-detalhe-unidade" *ngIf="a.autorUnidade">{{ a.autorUnidade }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="msg-manifestar">
+          <button class="msg-curtir-btn" type="button" (click)="toggleManifestar(msg.id)">
+            <span class="msg-curtir-emoji" *ngIf="msg.minhaReacao">{{ emojiDoTipo(msg.minhaReacao) }}</span>
+            <svg *ngIf="!msg.minhaReacao" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+            Manifestar
+          </button>
+
+          <div class="manifestar-picker" *ngIf="manifestarAbertoId === msg.id">
+            <button
+              class="manifestar-opcao"
+              type="button"
+              *ngFor="let r of reacoesDisponiveis"
+              [class.ativo]="msg.minhaReacao === r.tipo"
+              [disabled]="reagindoId === msg.id"
+              [attr.aria-label]="r.label"
+              [title]="r.label"
+              (click)="reagir(msg, r.tipo)"
+            >{{ r.emoji }}</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
