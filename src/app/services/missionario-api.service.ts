@@ -25,6 +25,7 @@ export interface DadosMissionarioDTO {
   linkfoto: string;
   temEmail: boolean;
   podeEscreverExperiencia: boolean;
+  podeSubirFoto: boolean;
 }
 
 export interface EnviarEmailRequest {

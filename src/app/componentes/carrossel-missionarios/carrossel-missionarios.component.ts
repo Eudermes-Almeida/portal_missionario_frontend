@@ -1,9 +1,12 @@
 import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { DadosMissionarioDTO, MissionarioApiService } from '../../services/missionario-api.service';
 import { AutorReacao, MensagemApiService, MensagemDTO, TipoReacao } from '../../services/mensagem-api.service';
 import { ExperienciaApiService, ExperienciaDTO } from '../../services/experiencia-api.service';
+import { FotoApiService, FotoDTO } from '../../services/foto-api.service';
+import { comprimirImagem } from '../../utils/compressao-imagem';
 
 // 4 opcoes fixas de status (nao derivadas do dado carregado): "Finalizada" e mantida mesmo
 // sem nenhum missionario com esse status hoje, decisao explicita do usuario pensando em
@@ -111,10 +114,21 @@ export class CarrosselMissionariosComponent implements OnInit {
   erroDetalheReacaoExperiencia: string | null = null;
   autoresReacaoExperiencia: AutorReacao[] = [];
 
+  // "Subir fotos" / "Ver fotos" -- upload nao usa modal (nao ha texto pra digitar, so escolher
+  // um arquivo), o <input type="file"> escondido no template dispara direto. "Ver fotos" abre
+  // uma grade; clicar numa miniatura amplia em tela cheia (lightbox).
+  enviandoFoto = false;
+  modalVerFotosAberto = false;
+  carregandoFotos = false;
+  erroCarregarFotos: string | null = null;
+  fotosCarregadas: FotoDTO[] = [];
+  fotoAmpliada: FotoDTO | null = null;
+
   constructor(
     private missionarioApi: MissionarioApiService,
     private mensagemApi: MensagemApiService,
     private experienciaApi: ExperienciaApiService,
+    private fotoApi: FotoApiService,
   ) {}
 
   ngOnInit(): void {
@@ -420,6 +434,74 @@ export class CarrosselMissionariosComponent implements OnInit {
     });
   }
 
+  // "podeSubirFoto" vem calculado pelo backend (mesmo cálculo de "podeEscreverExperiencia",
+  // ver DadosMissionariosDTO) -- clicar no botão desabilitado nem deveria disparar isto, mas a
+  // checagem fica aqui também por segurança (mesmo padrão de abrirModalEscreverExperiencia).
+  abrirSeletorFoto(inputFoto: HTMLInputElement): void {
+    if (!this.selecionado?.podeSubirFoto || this.enviandoFoto) {
+      return;
+    }
+    inputFoto.click();
+  }
+
+  onArquivoFotoSelecionado(event: Event, inputFoto: HTMLInputElement): void {
+    const arquivo = (event.target as HTMLInputElement).files?.[0] ?? null;
+    inputFoto.value = ''; // permite selecionar o mesmo arquivo de novo depois
+
+    if (!arquivo || !this.selecionado) {
+      return;
+    }
+
+    this.enviandoFoto = true;
+    this.mostrarToast('Enviando foto...');
+
+    comprimirImagem(arquivo)
+      .then((blob) => firstValueFrom(this.fotoApi.subirFoto(this.selecionado!.id, blob)))
+      .then(() => {
+        this.enviandoFoto = false;
+        this.mostrarToast('Foto enviada!');
+      })
+      .catch((erro) => {
+        this.enviandoFoto = false;
+        const mensagem = typeof erro?.error === 'string' ? erro.error : 'Não foi possível enviar a foto. Tente novamente.';
+        this.mostrarToast(mensagem);
+      });
+  }
+
+  abrirModalVerFotos(): void {
+    if (!this.selecionado) {
+      return;
+    }
+    this.modalVerFotosAberto = true;
+    this.carregandoFotos = true;
+    this.erroCarregarFotos = null;
+    this.fotosCarregadas = [];
+
+    this.fotoApi.buscaFotosPorMissionario(this.selecionado.id).subscribe({
+      next: (fotos) => {
+        this.fotosCarregadas = fotos;
+        this.carregandoFotos = false;
+      },
+      error: () => {
+        this.carregandoFotos = false;
+        this.erroCarregarFotos = 'Não foi possível carregar as fotos. Tente novamente.';
+      },
+    });
+  }
+
+  fecharModalVerFotos(): void {
+    this.modalVerFotosAberto = false;
+    this.fotoAmpliada = null;
+  }
+
+  ampliarFoto(foto: FotoDTO): void {
+    this.fotoAmpliada = foto;
+  }
+
+  fecharFotoAmpliada(): void {
+    this.fotoAmpliada = null;
+  }
+
   abrirModalLerMensagens(): void {
     if (!this.selecionado) {
       return;
@@ -521,6 +603,10 @@ export class CarrosselMissionariosComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   aoPressionarEsc(): void {
+    if (this.fotoAmpliada !== null) {
+      this.fotoAmpliada = null;
+      return;
+    }
     if (this.manifestarAbertoId !== null || this.detalheReacaoAberto !== null) {
       this.manifestarAbertoId = null;
       this.detalheReacaoAberto = null;
@@ -545,6 +631,9 @@ export class CarrosselMissionariosComponent implements OnInit {
     }
     if (this.modalLerExperienciasAberto) {
       this.fecharModalLerExperiencias();
+    }
+    if (this.modalVerFotosAberto) {
+      this.fecharModalVerFotos();
     }
   }
 
