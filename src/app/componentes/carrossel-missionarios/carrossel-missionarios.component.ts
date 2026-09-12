@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DadosMissionarioDTO, MissionarioApiService } from '../../services/missionario-api.service';
 import { AutorReacao, MensagemApiService, MensagemDTO, TipoReacao } from '../../services/mensagem-api.service';
+import { ExperienciaApiService, ExperienciaDTO } from '../../services/experiencia-api.service';
 
 // 4 opcoes fixas de status (nao derivadas do dado carregado): "Finalizada" e mantida mesmo
 // sem nenhum missionario com esse status hoje, decisao explicita do usuario pensando em
@@ -88,9 +89,32 @@ export class CarrosselMissionariosComponent implements OnInit {
   erroDetalheReacao: string | null = null;
   autoresReacao: AutorReacao[] = [];
 
+  // "Escrever Experiência" / "Ler Experiências" -- mesma tratativa de mensagens (ver acima),
+  // só que o autor é sempre o próprio missionário (ver ExperienciaService no backend) e o
+  // limite de caracteres é maior.
+  readonly EXPERIENCIA_MAX = 10000;
+  modalEscreverExperienciaAberto = false;
+  textoExperiencia = '';
+  enviandoExperiencia = false;
+  erroExperiencia: string | null = null;
+
+  modalLerExperienciasAberto = false;
+  carregandoExperiencias = false;
+  erroCarregarExperiencias: string | null = null;
+  experienciasCarregadas: ExperienciaDTO[] = [];
+
+  manifestarExperienciaAbertoId: number | null = null;
+  reagindoExperienciaId: number | null = null;
+
+  detalheReacaoExperienciaAberto: { experienciaId: number; tipo: TipoReacao } | null = null;
+  carregandoDetalheReacaoExperiencia = false;
+  erroDetalheReacaoExperiencia: string | null = null;
+  autoresReacaoExperiencia: AutorReacao[] = [];
+
   constructor(
     private missionarioApi: MissionarioApiService,
     private mensagemApi: MensagemApiService,
+    private experienciaApi: ExperienciaApiService,
   ) {}
 
   ngOnInit(): void {
@@ -271,6 +295,131 @@ export class CarrosselMissionariosComponent implements OnInit {
       });
   }
 
+  // "podeEscreverExperiencia" já vem calculado pelo backend (comparando o registromembro do
+  // membro logado com o do missionário -- ver DadosMissionariosDTO) -- o botão fica sempre
+  // visível, só desabilitado quando essa flag é false (ver template).
+  abrirModalEscreverExperiencia(): void {
+    if (!this.selecionado?.podeEscreverExperiencia) {
+      return;
+    }
+    this.textoExperiencia = '';
+    this.erroExperiencia = null;
+    this.modalEscreverExperienciaAberto = true;
+  }
+
+  fecharModalEscreverExperiencia(): void {
+    if (this.enviandoExperiencia) {
+      return;
+    }
+    this.modalEscreverExperienciaAberto = false;
+  }
+
+  get caracteresRestantesExperiencia(): number {
+    return this.EXPERIENCIA_MAX - this.textoExperiencia.length;
+  }
+
+  escreverExperiencia(): void {
+    const texto = this.textoExperiencia.trim();
+    if (!texto || !this.selecionado || this.enviandoExperiencia) {
+      return;
+    }
+
+    this.enviandoExperiencia = true;
+    this.erroExperiencia = null;
+
+    this.experienciaApi.escreverExperiencia(this.selecionado.id, { experiencia: texto }).subscribe({
+      next: () => {
+        this.enviandoExperiencia = false;
+        this.modalEscreverExperienciaAberto = false;
+        this.mostrarToast('Experiência publicada!');
+      },
+      error: (erro) => {
+        this.enviandoExperiencia = false;
+        this.erroExperiencia = typeof erro?.error === 'string' ? erro.error : 'Não foi possível publicar a experiência. Tente novamente.';
+      },
+    });
+  }
+
+  abrirModalLerExperiencias(): void {
+    if (!this.selecionado) {
+      return;
+    }
+    this.modalLerExperienciasAberto = true;
+    this.carregandoExperiencias = true;
+    this.erroCarregarExperiencias = null;
+    this.experienciasCarregadas = [];
+
+    this.experienciaApi.buscaExperienciasPorMissionario(this.selecionado.id).subscribe({
+      next: (experiencias) => {
+        this.experienciasCarregadas = experiencias;
+        this.carregandoExperiencias = false;
+      },
+      error: () => {
+        this.carregandoExperiencias = false;
+        this.erroCarregarExperiencias = 'Não foi possível carregar as experiências. Tente novamente.';
+      },
+    });
+  }
+
+  fecharModalLerExperiencias(): void {
+    this.modalLerExperienciasAberto = false;
+    this.manifestarExperienciaAbertoId = null;
+    this.detalheReacaoExperienciaAberto = null;
+  }
+
+  toggleManifestarExperiencia(experienciaId: number): void {
+    this.detalheReacaoExperienciaAberto = null;
+    this.manifestarExperienciaAbertoId = this.manifestarExperienciaAbertoId === experienciaId ? null : experienciaId;
+  }
+
+  abrirDetalheReacaoExperiencia(exp: ExperienciaDTO, tipo: TipoReacao): void {
+    this.manifestarExperienciaAbertoId = null;
+
+    if (this.detalheReacaoExperienciaAberto?.experienciaId === exp.id && this.detalheReacaoExperienciaAberto?.tipo === tipo) {
+      this.detalheReacaoExperienciaAberto = null;
+      return;
+    }
+
+    this.detalheReacaoExperienciaAberto = { experienciaId: exp.id, tipo };
+    this.carregandoDetalheReacaoExperiencia = true;
+    this.erroDetalheReacaoExperiencia = null;
+    this.autoresReacaoExperiencia = [];
+
+    this.experienciaApi.listaAutoresReacao(exp.id, tipo).subscribe({
+      next: (autores) => {
+        this.autoresReacaoExperiencia = autores;
+        this.carregandoDetalheReacaoExperiencia = false;
+      },
+      error: () => {
+        this.carregandoDetalheReacaoExperiencia = false;
+        this.erroDetalheReacaoExperiencia = 'Não foi possível carregar quem reagiu. Tente novamente.';
+      },
+    });
+  }
+
+  reagirExperiencia(exp: ExperienciaDTO, tipo: TipoReacao): void {
+    if (this.reagindoExperienciaId === exp.id) {
+      return;
+    }
+    this.reagindoExperienciaId = exp.id;
+
+    this.experienciaApi.reagir(exp.id, tipo).subscribe({
+      next: (resposta) => {
+        exp.reacoes = resposta.reacoes;
+        exp.minhaReacao = resposta.minhaReacao;
+        this.reagindoExperienciaId = null;
+        this.manifestarExperienciaAbertoId = null;
+        if (this.detalheReacaoExperienciaAberto?.experienciaId === exp.id) {
+          this.detalheReacaoExperienciaAberto = null;
+        }
+      },
+      error: () => {
+        this.reagindoExperienciaId = null;
+        this.mostrarToast('Não foi possível registrar sua reação. Tente novamente.');
+      },
+    });
+  }
+
   abrirModalLerMensagens(): void {
     if (!this.selecionado) {
       return;
@@ -377,6 +526,11 @@ export class CarrosselMissionariosComponent implements OnInit {
       this.detalheReacaoAberto = null;
       return;
     }
+    if (this.manifestarExperienciaAbertoId !== null || this.detalheReacaoExperienciaAberto !== null) {
+      this.manifestarExperienciaAbertoId = null;
+      this.detalheReacaoExperienciaAberto = null;
+      return;
+    }
     if (this.modalMensagemAberto) {
       this.fecharModalMensagem();
     }
@@ -385,6 +539,12 @@ export class CarrosselMissionariosComponent implements OnInit {
     }
     if (this.modalEmailAberto) {
       this.fecharModalEmail();
+    }
+    if (this.modalEscreverExperienciaAberto) {
+      this.fecharModalEscreverExperiencia();
+    }
+    if (this.modalLerExperienciasAberto) {
+      this.fecharModalLerExperiencias();
     }
   }
 

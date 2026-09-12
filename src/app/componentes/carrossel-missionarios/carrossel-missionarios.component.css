@@ -524,12 +524,17 @@ header.top {
   transition: background .15s ease, transform .1s ease;
 }
 
-.action-btn:hover {
+.action-btn:hover:not(:disabled) {
   background: var(--btn-grad-soft-hover);
 }
 
-.action-btn:active {
+.action-btn:active:not(:disabled) {
   transform: scale(.98);
+}
+
+.action-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
 }
 
 .action-btn svg {

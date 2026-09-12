@@ -6,7 +6,10 @@ import { environment } from '../../environments/environment';
 // Mesmos campos do DadosMissionariosDTO do backend (id_planilha e registromembro nunca
 // saem pela API, ver DadosMissionariosDTO.java). O email em si também não sai -- só
 // "temEmail" (booleano), pra saber se o botão "Enviar Email" pode ser oferecido sem o front
-// nunca receber o endereço de verdade do missionário.
+// nunca receber o endereço de verdade do missionário. "podeEscreverExperiencia" segue o
+// mesmo padrão: o backend já resolve (comparando registromembro do token com o do
+// missionário) se o membro logado é o próprio dono deste perfil -- o front só usa o
+// resultado pra habilitar/desabilitar o botão "Escrever Experiência Missionário".
 export interface DadosMissionarioDTO {
   id: number;
   unidade: string;
@@ -21,6 +24,7 @@ export interface DadosMissionarioDTO {
   aniversario: string;
   linkfoto: string;
   temEmail: boolean;
+  podeEscreverExperiencia: boolean;
 }
 
 export interface EnviarEmailRequest {
