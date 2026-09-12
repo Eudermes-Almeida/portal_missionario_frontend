@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { DadosMissionarioDTO, MissionarioApiService } from '../../services/missionario-api.service';
 import { AutorReacao, MensagemApiService, MensagemDTO, TipoReacao } from '../../services/mensagem-api.service';
 import { ExperienciaApiService, ExperienciaDTO } from '../../services/experiencia-api.service';
-import { FotoApiService, FotoDTO } from '../../services/foto-api.service';
+import { FotoApiService, FotoComentarioDTO, FotoDTO } from '../../services/foto-api.service';
 import { comprimirImagem } from '../../utils/compressao-imagem';
 
 // 4 opcoes fixas de status (nao derivadas do dado carregado): "Finalizada" e mantida mesmo
@@ -124,6 +124,24 @@ export class CarrosselMissionariosComponent implements OnInit {
   fotosCarregadas: FotoDTO[] = [];
   fotoAmpliada: FotoDTO | null = null;
 
+  // Manifestar + comentários dentro do lightbox -- como só uma foto fica ampliada por vez (ao
+  // contrário da lista de mensagens/experiências, onde vários itens aparecem juntos), não
+  // precisa de um Map/id por item, só estado simples "desta foto aberta agora".
+  readonly COMENTARIO_MAX = 100;
+  manifestarFotoAberto = false;
+  reagindoFoto = false;
+  detalheReacaoFotoAberto: TipoReacao | null = null;
+  carregandoDetalheReacaoFoto = false;
+  erroDetalheReacaoFoto: string | null = null;
+  autoresReacaoFoto: AutorReacao[] = [];
+
+  carregandoComentariosFoto = false;
+  erroComentariosFoto: string | null = null;
+  comentariosDaFoto: FotoComentarioDTO[] = [];
+  textoComentarioFoto = '';
+  enviandoComentarioFoto = false;
+  erroComentarioFoto: string | null = null;
+
   constructor(
     private missionarioApi: MissionarioApiService,
     private mensagemApi: MensagemApiService,
@@ -228,12 +246,6 @@ export class CarrosselMissionariosComponent implements OnInit {
   voltarAoCarrossel(): void {
     this.detalheAberto = false;
     this.fotoQuebrada = false;
-  }
-
-  // Contexto de cada botao fica para o futuro (deliberado) -- por enquanto so confirma
-  // visualmente que o clique registrou.
-  acaoFutura(nome: string): void {
-    this.mostrarToast(`"${nome}" — em breve`);
   }
 
   private mostrarToast(msg: string): void {
@@ -496,10 +508,116 @@ export class CarrosselMissionariosComponent implements OnInit {
 
   ampliarFoto(foto: FotoDTO): void {
     this.fotoAmpliada = foto;
+    this.manifestarFotoAberto = false;
+    this.detalheReacaoFotoAberto = null;
+    this.textoComentarioFoto = '';
+    this.erroComentarioFoto = null;
+
+    this.carregandoComentariosFoto = true;
+    this.erroComentariosFoto = null;
+    this.comentariosDaFoto = [];
+
+    this.fotoApi.buscaComentariosPorFoto(foto.id).subscribe({
+      next: (comentarios) => {
+        this.comentariosDaFoto = comentarios;
+        this.carregandoComentariosFoto = false;
+      },
+      error: () => {
+        this.carregandoComentariosFoto = false;
+        this.erroComentariosFoto = 'Não foi possível carregar os comentários. Tente novamente.';
+      },
+    });
   }
 
   fecharFotoAmpliada(): void {
     this.fotoAmpliada = null;
+    this.manifestarFotoAberto = false;
+    this.detalheReacaoFotoAberto = null;
+  }
+
+  toggleManifestarFoto(): void {
+    this.detalheReacaoFotoAberto = null;
+    this.manifestarFotoAberto = !this.manifestarFotoAberto;
+  }
+
+  abrirDetalheReacaoFoto(tipo: TipoReacao): void {
+    if (!this.fotoAmpliada) {
+      return;
+    }
+    this.manifestarFotoAberto = false;
+
+    if (this.detalheReacaoFotoAberto === tipo) {
+      this.detalheReacaoFotoAberto = null;
+      return;
+    }
+
+    this.detalheReacaoFotoAberto = tipo;
+    this.carregandoDetalheReacaoFoto = true;
+    this.erroDetalheReacaoFoto = null;
+    this.autoresReacaoFoto = [];
+
+    this.fotoApi.listaAutoresReacao(this.fotoAmpliada.id, tipo).subscribe({
+      next: (autores) => {
+        this.autoresReacaoFoto = autores;
+        this.carregandoDetalheReacaoFoto = false;
+      },
+      error: () => {
+        this.carregandoDetalheReacaoFoto = false;
+        this.erroDetalheReacaoFoto = 'Não foi possível carregar quem reagiu. Tente novamente.';
+      },
+    });
+  }
+
+  reagirFoto(tipo: TipoReacao): void {
+    const foto = this.fotoAmpliada;
+    if (!foto || this.reagindoFoto) {
+      return;
+    }
+    this.reagindoFoto = true;
+
+    this.fotoApi.reagir(foto.id, tipo).subscribe({
+      next: (resposta) => {
+        foto.reacoes = resposta.reacoes;
+        foto.minhaReacao = resposta.minhaReacao;
+        this.reagindoFoto = false;
+        this.manifestarFotoAberto = false;
+        if (this.detalheReacaoFotoAberto !== null) {
+          this.detalheReacaoFotoAberto = null;
+        }
+      },
+      error: () => {
+        this.reagindoFoto = false;
+        this.mostrarToast('Não foi possível registrar sua reação. Tente novamente.');
+      },
+    });
+  }
+
+  get caracteresRestantesComentarioFoto(): number {
+    return this.COMENTARIO_MAX - this.textoComentarioFoto.length;
+  }
+
+  escreverComentarioFoto(): void {
+    const foto = this.fotoAmpliada;
+    const texto = this.textoComentarioFoto.trim();
+    if (!foto || !texto || this.enviandoComentarioFoto) {
+      return;
+    }
+
+    this.enviandoComentarioFoto = true;
+    this.erroComentarioFoto = null;
+
+    this.fotoApi.escreverComentario(foto.id, texto).subscribe({
+      next: (comentario) => {
+        this.comentariosDaFoto = [comentario, ...this.comentariosDaFoto];
+        foto.temComentario = true;
+        this.textoComentarioFoto = '';
+        this.enviandoComentarioFoto = false;
+      },
+      error: (erro) => {
+        this.enviandoComentarioFoto = false;
+        this.erroComentarioFoto = typeof erro?.error === 'string' ? erro.error : 'Não foi possível enviar o comentário. Tente novamente.';
+      },
+    });
   }
 
   abrirModalLerMensagens(): void {
@@ -603,8 +721,13 @@ export class CarrosselMissionariosComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   aoPressionarEsc(): void {
+    if (this.manifestarFotoAberto || this.detalheReacaoFotoAberto !== null) {
+      this.manifestarFotoAberto = false;
+      this.detalheReacaoFotoAberto = null;
+      return;
+    }
     if (this.fotoAmpliada !== null) {
-      this.fotoAmpliada = null;
+      this.fecharFotoAmpliada();
       return;
     }
     if (this.manifestarAbertoId !== null || this.detalheReacaoAberto !== null) {

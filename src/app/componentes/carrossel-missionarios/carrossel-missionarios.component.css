@@ -555,6 +555,7 @@ header.top {
 }
 
 .foto-grid-item {
+  position: relative;
   border: 1px solid var(--btn-border);
   border-radius: 14px;
   padding: 0;
@@ -563,6 +564,32 @@ header.top {
   cursor: pointer;
   background: rgba(0, 0, 0, 0.15);
   transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.foto-grid-sinais {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.foto-grid-sinal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(10, 17, 48, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  backdrop-filter: blur(2px);
+}
+
+.foto-grid-sinal svg {
+  width: 12px;
+  height: 12px;
 }
 
 .foto-grid-item:hover {
@@ -589,17 +616,112 @@ header.top {
   animation: modal-overlay-in .15s ease;
 }
 
+.lightbox-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 100%;
+}
+
 .lightbox-img {
   max-width: 100%;
-  max-height: 100%;
+  max-height: 45vh;
   border-radius: 12px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  object-fit: contain;
 }
 
 .lightbox-fechar {
   position: fixed;
   top: 20px;
   right: 20px;
+}
+
+.lightbox-painel {
+  width: 100%;
+  background: linear-gradient(160deg, var(--sky) 0%, var(--royal) 45%, var(--deep) 80%, var(--deepest) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  box-shadow: 0 20px 48px rgba(13, 29, 77, 0.35);
+}
+
+.lightbox-comentarios {
+  flex: 1;
+  min-height: 60px;
+  max-height: 26vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 2px;
+}
+
+.lightbox-comentario {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 8px;
+}
+
+.lightbox-comentario-topo {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lightbox-comentario-autor {
+  font-weight: 700;
+  font-size: .82rem;
+  color: #fff;
+}
+
+.lightbox-comentario-unidade {
+  font-size: .72rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.lightbox-comentario-texto {
+  font-size: .84rem;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 2px 0 0;
+  word-break: break-word;
+}
+
+.lightbox-comentario-form {
+  display: flex;
+  gap: 8px;
+}
+
+.lightbox-comentario-form input {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid var(--btn-border);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 14px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: .85rem;
+}
+
+.lightbox-comentario-form input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.lightbox-comentario-form input:disabled {
+  opacity: .6;
+}
+
+.lightbox-comentario-enviar {
+  width: auto;
+  padding: 10px 18px;
+  flex: none;
 }
 
 .toast {
