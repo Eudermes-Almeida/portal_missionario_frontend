@@ -1050,9 +1050,23 @@ header.top {
   color: rgba(255, 255, 255, 0.65);
 }
 
+.msg-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .msg-manifestar {
   position: relative;
   display: inline-block;
+}
+
+/* Painel de comentários de uma experiência reaproveita .lightbox-comentario* (mesmo estilo do
+   lightbox de fotos), mas aqui é filho direto de .msg-card (sem o flex/gap de .lightbox-painel),
+   entao precisa do proprio espacamento. */
+.msg-card .lightbox-comentarios {
+  margin-top: 12px;
 }
 
 .msg-curtir-btn {

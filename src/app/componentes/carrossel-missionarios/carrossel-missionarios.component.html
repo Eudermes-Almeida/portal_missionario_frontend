@@ -319,25 +319,69 @@
           </div>
         </div>
 
-        <div class="msg-manifestar">
-          <button class="msg-curtir-btn" type="button" (click)="toggleManifestarExperiencia(exp.id)">
-            <span class="msg-curtir-emoji" *ngIf="exp.minhaReacao">{{ emojiDoTipo(exp.minhaReacao) }}</span>
-            <svg *ngIf="!exp.minhaReacao" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
-            Manifestar
-          </button>
+        <div class="msg-acoes">
+          <div class="msg-manifestar">
+            <button class="msg-curtir-btn" type="button" (click)="toggleManifestarExperiencia(exp.id)">
+              <span class="msg-curtir-emoji" *ngIf="exp.minhaReacao">{{ emojiDoTipo(exp.minhaReacao) }}</span>
+              <svg *ngIf="!exp.minhaReacao" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+              Manifestar
+            </button>
 
-          <div class="manifestar-picker" *ngIf="manifestarExperienciaAbertoId === exp.id">
-            <button
-              class="manifestar-opcao"
-              type="button"
-              *ngFor="let r of reacoesDisponiveis"
-              [class.ativo]="exp.minhaReacao === r.tipo"
-              [disabled]="reagindoExperienciaId === exp.id"
-              [attr.aria-label]="r.label"
-              [title]="r.label"
-              (click)="reagirExperiencia(exp, r.tipo)"
-            >{{ r.emoji }}</button>
+            <div class="manifestar-picker" *ngIf="manifestarExperienciaAbertoId === exp.id">
+              <button
+                class="manifestar-opcao"
+                type="button"
+                *ngFor="let r of reacoesDisponiveis"
+                [class.ativo]="exp.minhaReacao === r.tipo"
+                [disabled]="reagindoExperienciaId === exp.id"
+                [attr.aria-label]="r.label"
+                [title]="r.label"
+                (click)="reagirExperiencia(exp, r.tipo)"
+              >{{ r.emoji }}</button>
+            </div>
           </div>
+
+          <button class="msg-curtir-btn" type="button" (click)="toggleComentariosExperiencia(exp)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Comentários{{ exp.quantidadeComentarios ? ' (' + exp.quantidadeComentarios + ')' : '' }}
+          </button>
+        </div>
+
+        <div class="lightbox-comentarios" *ngIf="comentariosExperienciaAbertaId === exp.id">
+          <p class="modal-lista-carregando" *ngIf="carregandoComentariosExperiencia">Carregando comentários...</p>
+          <p class="modal-erro" *ngIf="erroComentariosExperiencia">{{ erroComentariosExperiencia }}</p>
+          <p class="modal-lista-vazia" *ngIf="!carregandoComentariosExperiencia && !erroComentariosExperiencia && !comentariosDaExperiencia.length">
+            Nenhum comentário ainda. Seja o primeiro a comentar!
+          </p>
+
+          <div class="lightbox-comentario" *ngFor="let c of comentariosDaExperiencia">
+            <div class="lightbox-comentario-topo">
+              <span class="lightbox-comentario-autor">{{ c.autorNome }}</span>
+              <span class="lightbox-comentario-unidade">{{ c.autorUnidade }}</span>
+            </div>
+            <p class="lightbox-comentario-texto">{{ c.comentario }}</p>
+          </div>
+
+          <div class="lightbox-comentario-form">
+            <input
+              type="text"
+              [(ngModel)]="textoComentarioExperiencia"
+              [maxlength]="COMENTARIO_MAX"
+              [disabled]="enviandoComentarioExperiencia"
+              placeholder="Escreva um comentário..."
+              (keydown.enter)="escreverComentarioExperiencia(exp)"
+            >
+            <button
+              class="pm-auth-btn lightbox-comentario-enviar"
+              type="button"
+              [disabled]="!textoComentarioExperiencia.trim() || enviandoComentarioExperiencia"
+              (click)="escreverComentarioExperiencia(exp)"
+            >
+              {{ enviandoComentarioExperiencia ? '...' : 'Enviar' }}
+            </button>
+          </div>
+          <div class="modal-contador" [class.limite]="caracteresRestantesComentarioExperiencia <= 20">{{ caracteresRestantesComentarioExperiencia }} caracteres restantes</div>
+          <p class="modal-erro" *ngIf="erroComentarioExperiencia">{{ erroComentarioExperiencia }}</p>
         </div>
       </div>
     </div>

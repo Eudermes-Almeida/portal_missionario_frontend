@@ -15,10 +15,24 @@ export interface ExperienciaDTO {
   hora: string;
   reacoes: ReacaoResumo[];
   minhaReacao: TipoReacao | null;
+  quantidadeComentarios: number;
 }
 
 export interface EscreverExperienciaRequest {
   experiencia: string;
+}
+
+// Mesmos campos do ExperienciaComentarioDTO do backend. autorNome/autorUnidade vem congelados
+// (resolvidos no momento do comentario), nao ao vivo -- mesmo padrao de FotoComentarioDTO.
+export interface ExperienciaComentarioDTO {
+  id: number;
+  experienciaId: number;
+  autorTipo: string;
+  autorNome: string;
+  autorUnidade: string;
+  comentario: string;
+  dia: string;
+  hora: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -42,5 +56,13 @@ export class ExperienciaApiService {
 
   listaAutoresReacao(experienciaId: number, tipoReacao: TipoReacao): Observable<AutorReacao[]> {
     return this.http.get<AutorReacao[]>(`${this.baseUrl}/experiencias/${experienciaId}/reacao/${tipoReacao}`);
+  }
+
+  escreverComentario(experienciaId: number, comentario: string): Observable<ExperienciaComentarioDTO> {
+    return this.http.post<ExperienciaComentarioDTO>(`${this.baseUrl}/experiencias/${experienciaId}/comentario`, { comentario });
+  }
+
+  buscaComentariosPorExperiencia(experienciaId: number): Observable<ExperienciaComentarioDTO[]> {
+    return this.http.get<ExperienciaComentarioDTO[]>(`${this.baseUrl}/experiencias/${experienciaId}/comentario`);
   }
 }

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { DadosMissionarioDTO, MissionarioApiService } from '../../services/missionario-api.service';
 import { AutorReacao, MensagemApiService, MensagemDTO, TipoReacao } from '../../services/mensagem-api.service';
-import { ExperienciaApiService, ExperienciaDTO } from '../../services/experiencia-api.service';
+import { ExperienciaApiService, ExperienciaComentarioDTO, ExperienciaDTO } from '../../services/experiencia-api.service';
 import { FotoApiService, FotoComentarioDTO, FotoDTO } from '../../services/foto-api.service';
 import { comprimirImagem } from '../../utils/compressao-imagem';
 
@@ -113,6 +113,20 @@ export class CarrosselMissionariosComponent implements OnInit {
   carregandoDetalheReacaoExperiencia = false;
   erroDetalheReacaoExperiencia: string | null = null;
   autoresReacaoExperiencia: AutorReacao[] = [];
+
+  // Comentários numa experiência -- mesma metodologia de fotos (autor congelado, até 100
+  // caracteres, múltiplos por pessoa, carregados sob demanda). Diferença: a lista de
+  // experiências já mostra todos os cards abertos ao mesmo tempo (não há lightbox de "1 por
+  // vez"), então o painel de comentários expande dentro do próprio card -- só um card por vez
+  // (mesmo padrão de manifestarExperienciaAbertoId/detalheReacaoExperienciaAberto, que também
+  // são singletons apesar de vários cards existirem juntos).
+  comentariosExperienciaAbertaId: number | null = null;
+  carregandoComentariosExperiencia = false;
+  erroComentariosExperiencia: string | null = null;
+  comentariosDaExperiencia: ExperienciaComentarioDTO[] = [];
+  textoComentarioExperiencia = '';
+  enviandoComentarioExperiencia = false;
+  erroComentarioExperiencia: string | null = null;
 
   // "Subir fotos" / "Ver fotos" -- upload nao usa modal (nao ha texto pra digitar, so escolher
   // um arquivo), o <input type="file"> escondido no template dispara direto. "Ver fotos" abre
@@ -391,6 +405,7 @@ export class CarrosselMissionariosComponent implements OnInit {
     this.modalLerExperienciasAberto = false;
     this.manifestarExperienciaAbertoId = null;
     this.detalheReacaoExperienciaAberto = null;
+    this.comentariosExperienciaAbertaId = null;
   }
 
   toggleManifestarExperiencia(experienciaId: number): void {
@@ -442,6 +457,65 @@ export class CarrosselMissionariosComponent implements OnInit {
       error: () => {
         this.reagindoExperienciaId = null;
         this.mostrarToast('Não foi possível registrar sua reação. Tente novamente.');
+      },
+    });
+  }
+
+  // Abre/fecha o painel de comentários dentro do próprio card (não é lightbox) -- clicar de
+  // novo no mesmo card fecha; abrir um card fecha qualquer outro painel/picker aberto (mesma
+  // regra de exclusividade já usada pelo Manifestar e "quem reagiu" na lista).
+  toggleComentariosExperiencia(exp: ExperienciaDTO): void {
+    this.manifestarExperienciaAbertoId = null;
+    this.detalheReacaoExperienciaAberto = null;
+
+    if (this.comentariosExperienciaAbertaId === exp.id) {
+      this.comentariosExperienciaAbertaId = null;
+      return;
+    }
+
+    this.comentariosExperienciaAbertaId = exp.id;
+    this.textoComentarioExperiencia = '';
+    this.erroComentarioExperiencia = null;
+
+    this.carregandoComentariosExperiencia = true;
+    this.erroComentariosExperiencia = null;
+    this.comentariosDaExperiencia = [];
+
+    this.experienciaApi.buscaComentariosPorExperiencia(exp.id).subscribe({
+      next: (comentarios) => {
+        this.comentariosDaExperiencia = comentarios;
+        this.carregandoComentariosExperiencia = false;
+      },
+      error: () => {
+        this.carregandoComentariosExperiencia = false;
+        this.erroComentariosExperiencia = 'Não foi possível carregar os comentários. Tente novamente.';
+      },
+    });
+  }
+
+  get caracteresRestantesComentarioExperiencia(): number {
+    return this.COMENTARIO_MAX - this.textoComentarioExperiencia.length;
+  }
+
+  escreverComentarioExperiencia(exp: ExperienciaDTO): void {
+    const texto = this.textoComentarioExperiencia.trim();
+    if (!texto || this.enviandoComentarioExperiencia) {
+      return;
+    }
+
+    this.enviandoComentarioExperiencia = true;
+    this.erroComentarioExperiencia = null;
+
+    this.experienciaApi.escreverComentario(exp.id, texto).subscribe({
+      next: (comentario) => {
+        this.comentariosDaExperiencia = [comentario, ...this.comentariosDaExperiencia];
+        exp.quantidadeComentarios = (exp.quantidadeComentarios ?? 0) + 1;
+        this.textoComentarioExperiencia = '';
+        this.enviandoComentarioExperiencia = false;
+      },
+      error: (erro) => {
+        this.enviandoComentarioExperiencia = false;
+        this.erroComentarioExperiencia = typeof erro?.error === 'string' ? erro.error : 'Não foi possível enviar o comentário. Tente novamente.';
       },
     });
   }
